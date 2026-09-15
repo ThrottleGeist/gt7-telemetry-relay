@@ -1,0 +1,80 @@
+name: Build standalone releases
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Linux x86_64
+            runner: ubuntu-latest
+            filename: gt7-telemetry-relay-linux-x86_64
+          - platform: Windows x86_64
+            runner: windows-latest
+            filename: gt7-telemetry-relay-windows-x86_64
+          - platform: macOS Apple Silicon
+            runner: macos-latest
+            filename: gt7-telemetry-relay-macos-arm64
+          - platform: macOS Intel
+            runner: macos-15-intel
+            filename: gt7-telemetry-relay-macos-x86_64
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        run: python -m pip install . pyinstaller
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build executable
+        run: >-
+          python -m PyInstaller --clean --noconfirm --onefile
+          --name ${{ matrix.filename }} --paths src scripts/standalone.py
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.filename }}
+          path: dist/${{ matrix.filename }}*
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download executables
+        uses: actions/download-artifact@v7
+        with:
+          pattern: gt7-telemetry-relay-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          overwrite_files: true
+          files: release-assets/*
