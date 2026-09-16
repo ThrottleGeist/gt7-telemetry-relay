@@ -33,6 +33,14 @@ class FakeSocket:
         self.closed = True
 
 
+class WindowsUdpResetSocket(FakeSocket):
+    def recvfrom(self, _: int) -> tuple[bytes, tuple[str, int]]:
+        raise ConnectionResetError(
+            10054,
+            "An existing connection was forcibly closed by the remote host",
+        )
+
+
 class RelayTests(unittest.TestCase):
     def test_sends_heartbeat_from_the_bound_telemetry_socket(self) -> None:
         fake_socket = FakeSocket()
@@ -89,6 +97,19 @@ class RelayTests(unittest.TestCase):
         )
         self.assertEqual(2, relay.packets_received)
         self.assertEqual(4, relay.packets_forwarded)
+
+    def test_ignores_windows_udp_port_unreachable_when_receiving(self) -> None:
+        fake_socket = WindowsUdpResetSocket()
+        relay = TelemetryRelay(
+            RelayConfig("192.168.1.42", (RelayOutput("127.0.0.1", 33741),)),
+            socket_factory=lambda *_: fake_socket,
+        )
+
+        relay.open()
+        with self.assertLogs("gt7_telemetry_relay.relay", "DEBUG") as logs:
+            self.assertEqual(0, relay.forward_available())
+
+        self.assertTrue(any("port-unreachable" in message for message in logs.output))
 
     def test_parse_output_accepts_ipv4_and_bracketed_ipv6(self) -> None:
         self.assertEqual(RelayOutput("localhost", 33741), parse_output("localhost:33741"))

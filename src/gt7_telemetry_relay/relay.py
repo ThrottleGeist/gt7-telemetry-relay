@@ -18,6 +18,7 @@ FORWARD_PACKET_TYPES = frozenset({"A", "B", "C"})
 PACKET_SIZES = {"A": 296, "B": 316, "C": 368}
 _KEY = b"Simulator Interface Packet GT7 v"
 _NONCE_XORS = {"A": 0xDEADBEAF, "B": 0xDEADBEEF, "C": 0xDEADBEEF}
+_WINDOWS_UDP_PORT_UNREACHABLE = 10054
 
 
 @dataclass(frozen=True)
@@ -163,6 +164,16 @@ class TelemetryRelay:
                 packet, source = udp_socket.recvfrom(self.config.receive_buffer_size)
             except BlockingIOError:
                 return handled
+            except ConnectionResetError as error:
+                # Windows reports a prior UDP send that elicited ICMP "Port
+                # Unreachable" as WSAECONNRESET (10054) on recvfrom(). This
+                # can happen normally when GT7 or an output app stops.
+                if self._stopped:
+                    return handled
+                if _is_windows_udp_port_unreachable(error):
+                    LOG.debug("ignoring Windows UDP port-unreachable notification: %s", error)
+                    return handled
+                raise RuntimeError(f"could not receive GT7 telemetry: {error}") from error
             except OSError as error:
                 if self._stopped:
                     return handled
@@ -219,6 +230,14 @@ class TelemetryRelay:
 
     def __exit__(self, *_: object) -> None:
         self.close()
+
+
+def _is_windows_udp_port_unreachable(error: ConnectionResetError) -> bool:
+    """Return whether Windows reported an asynchronous UDP port error."""
+    return (
+        error.errno == _WINDOWS_UDP_PORT_UNREACHABLE
+        or getattr(error, "winerror", None) == _WINDOWS_UDP_PORT_UNREACHABLE
+    )
 
 
 def parse_output(value: str) -> RelayOutput:

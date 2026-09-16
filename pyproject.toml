@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gt7-telemetry-relay"
-version = "1.0.0"
+version = "1.0.1"
 description = "Fan out a single Gran Turismo 7 UDP telemetry stream to local UDP ports"
 readme = "README.md"
 requires-python = ">=3.10"
