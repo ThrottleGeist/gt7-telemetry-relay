@@ -211,11 +211,9 @@ does not decode telemetry fields, buffer packets, or retry failed sends.
 If `gt7-telemetry-relay` helps your GT7 setup, sharing it with other sim racers,
 reporting issues, and contributing improvements are all valuable ways to help.
 
-You can also follow my YouTube channel. If you would like to make a one-time
-contribution toward open-source GT7 tools, testing, and future development,
-you can support ThrottleGeist here:
+I am also on YouTube, and a follow would be appreciated:
 
-[![YouTube: ThrottleGeistRacing](https://img.shields.io/badge/YouTube-ThrottleGeistRacing-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@ThrottleGeistRacing) [![Buy me a coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=throttlegeist&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)](https://buymeacoffee.com/throttlegeist)
+[![YouTube: ThrottleGeistRacing](https://img.shields.io/badge/YouTube-ThrottleGeistRacing-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@ThrottleGeistRacing)
 
 Support is always optional, and simply using, sharing, or improving the project
 is appreciated.
